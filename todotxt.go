@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 	"time"
 )
@@ -42,6 +43,40 @@ func (td TaskData) String() string {
 		parts = append(parts, s)
 	}
 	return strings.Join(parts, " ")
+}
+
+type TaskList []TaskData
+
+func (ts TaskList) Projects() []string {
+	buf := map[string]bool{}
+	for _, task := range ts {
+		for _, project := range task.Project {
+			buf[project] = true
+		}
+	}
+
+	var projects []string
+	for k := range buf {
+		projects = append(projects, k)
+	}
+	sort.Strings(projects)
+	return projects
+}
+
+func (ts TaskList) Contexts() []string {
+	buf := map[string]bool{}
+	for _, task := range ts {
+		for _, context := range task.Context {
+			buf[context] = true
+		}
+	}
+
+	var contexts []string
+	for k := range buf {
+		contexts = append(contexts, k)
+	}
+	sort.Strings(contexts)
+	return contexts
 }
 
 type tokFn func(string, *TaskData) bool
@@ -135,8 +170,8 @@ func NewTask(input string) (td TaskData) {
 	return
 }
 
-func LoadFile(filename string) ([]TaskData, error) {
-	var tasks []TaskData
+func LoadFile(filename string) (TaskList, error) {
+	var tasks TaskList
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return tasks, err
