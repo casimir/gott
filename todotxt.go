@@ -47,6 +47,18 @@ func (td TaskData) String() string {
 
 type TaskList []TaskData
 
+func (l TaskList) Len() int      { return len(l) }
+func (l TaskList) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+func (l TaskList) Less(i, j int) bool {
+	a, b := l[i], l[j]
+	if a.Priority == b.Priority {
+		return a.Date == b.Date || a.Date.Before(b.Date)
+	} else if a.Priority != byte(0) || b.Priority != byte(0) {
+		return b.Priority == byte(0)
+	}
+	return a.Priority < b.Priority
+}
+
 func (ts TaskList) Projects() []string {
 	buf := map[string]bool{}
 	for _, task := range ts {
@@ -77,6 +89,34 @@ func (ts TaskList) Contexts() []string {
 	}
 	sort.Strings(contexts)
 	return contexts
+}
+
+type FilterFn func(TaskData) bool
+
+func (ts TaskList) Filter(fns ...FilterFn) TaskList {
+	var ret TaskList
+	for _, it := range ts {
+		for _, fn := range fns {
+			if fn(it) {
+				ret = append(ret, it)
+				break
+			}
+		}
+	}
+	return ret
+}
+
+func (ts TaskList) Exclude(fns ...FilterFn) TaskList {
+	var ret TaskList
+	for _, it := range ts {
+		for _, fn := range fns {
+			if !fn(it) {
+				ret = append(ret, it)
+				break
+			}
+		}
+	}
+	return ret
 }
 
 type tokFn func(string, *TaskData) bool
@@ -179,5 +219,6 @@ func LoadFile(filename string) (TaskList, error) {
 	for _, line := range bytes.Split(raw, []byte("\n")) {
 		tasks = append(tasks, NewTask(string(line)))
 	}
+	sort.Sort(tasks)
 	return tasks, nil
 }
