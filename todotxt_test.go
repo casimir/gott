@@ -1,6 +1,8 @@
 package gott
 
 import (
+	"math/rand"
+	"sort"
 	"testing"
 	"time"
 
@@ -110,4 +112,35 @@ func TestParsing(t *testing.T) {
 	for _, it := range testData {
 		assert.So(NewTask(it.in), should.Resemble, it.expected)
 	}
+}
+
+var niceList = TaskList{
+	{Priority: 'A', Date: time.Date(2015, time.May, 2, 0, 0, 0, 0, time.UTC)},
+	{Priority: 'A', Date: time.Date(2015, time.May, 12, 0, 0, 0, 0, time.UTC)},
+	{Priority: 'A'},
+	{Priority: 'B', Date: time.Date(2015, time.May, 2, 0, 0, 0, 0, time.UTC)},
+	{Priority: 'B', Date: time.Date(2015, time.May, 2, 0, 0, 0, 0, time.UTC)},
+	{Priority: 'C', Date: time.Date(2015, time.May, 1, 0, 0, 0, 0, time.UTC)},
+	{Date: time.Date(2015, time.May, 1, 0, 0, 0, 0, time.UTC)},
+	{Date: time.Date(2015, time.July, 1, 0, 0, 0, 0, time.UTC)},
+	{},
+	{},
+	{},
+}
+
+func shuffle(ts TaskList) TaskList {
+	rand.Seed(time.Now().UnixNano())
+	shuffled := make(TaskList, len(ts))
+	for i, r := range rand.Perm(len(ts)) {
+		shuffled[i] = ts[r]
+	}
+	return shuffled
+}
+
+func TestSorting(t *testing.T) {
+	assert := assertions.New(t)
+	shuffled := shuffle(niceList)
+	assert.So(shuffled, should.NotResemble, niceList)
+	sort.Sort(shuffled)
+	assert.So(shuffled, should.Resemble, niceList)
 }

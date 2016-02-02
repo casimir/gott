@@ -51,12 +51,19 @@ func (l TaskList) Len() int      { return len(l) }
 func (l TaskList) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 func (l TaskList) Less(i, j int) bool {
 	a, b := l[i], l[j]
-	if a.Priority == b.Priority {
-		return a.Date == b.Date || a.Date.Before(b.Date)
-	} else if a.Priority != byte(0) || b.Priority != byte(0) {
-		return b.Priority == byte(0)
+	if a.Priority != b.Priority {
+		if a.Priority == byte(0) || b.Priority == byte(0) {
+			return b.Priority == byte(0)
+		}
+		return a.Priority < b.Priority
 	}
-	return a.Priority < b.Priority
+	if a.Date != b.Date {
+		if a.Date == (time.Time{}) || b.Date == (time.Time{}) {
+			return b.Date == (time.Time{})
+		}
+		return a.Date.Before(b.Date)
+	}
+	return true
 }
 
 func (ts TaskList) Projects() []string {
